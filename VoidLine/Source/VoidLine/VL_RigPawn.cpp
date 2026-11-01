@@ -4,6 +4,8 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/Engine.h"
+#include "Engine/GameInstance.h"
+#include "Engine/World.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -15,6 +17,8 @@
 #include "VL_ExposureComponent.h"
 #include "VL_HealthComponent.h"
 #include "VL_WeaponComponent.h"
+#include "VL_WorldStateSubsystem.h"
+
 
 AVL_RigPawn::AVL_RigPawn()
 {
@@ -208,5 +212,27 @@ void AVL_RigPawn::HandleRigDeath()
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		DisableInput(PC);
+	}
+}
+
+void AVL_RigPawn::VL_Sleep()
+{
+	if (UGameInstance* GI = GetWorld()->GetGameInstance())
+	{
+		if (UVL_WorldStateSubsystem* State = GI->GetSubsystem<UVL_WorldStateSubsystem>())
+		{
+			State->AdvanceNight();
+		}
+	}
+}
+
+void AVL_RigPawn::VL_SetNight(int32 NewNight)
+{
+	if (UGameInstance* GI = GetWorld()->GetGameInstance())
+	{
+		if (UVL_WorldStateSubsystem* State = GI->GetSubsystem<UVL_WorldStateSubsystem>())
+		{
+			State->SetNight(NewNight);
+		}
 	}
 }

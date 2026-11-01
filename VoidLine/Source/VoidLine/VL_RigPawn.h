@@ -28,6 +28,13 @@ public:
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	virtual void PawnClientRestart() override;
 
+	// Debug console commands
+	UFUNCTION(Exec)
+	void VL_Sleep();
+
+	UFUNCTION(Exec)
+	void VL_SetNight(int32 NewNight);
+
 protected:
 	virtual void BeginPlay() override;
 
