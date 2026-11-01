@@ -3,6 +3,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/Engine.h"
 #include "UObject/ConstructorHelpers.h"
+#include "VL_HealthComponent.h"
 
 AVL_TargetDummy::AVL_TargetDummy()
 {
@@ -19,31 +20,29 @@ AVL_TargetDummy::AVL_TargetDummy()
 		Mesh->SetStaticMesh(CubeMesh.Object);
 	}
 
+	Health = CreateDefaultSubobject<UVL_HealthComponent>(TEXT("Health"));
+
 	Tags.Add(TEXT("VL_Enemy"));
 }
 
 void AVL_TargetDummy::BeginPlay()
 {
 	Super::BeginPlay();
-	Health = MaxHealth;
+
+	Health->OnHealthChanged.AddDynamic(this, &AVL_TargetDummy::HandleHealthChanged);
+	Health->OnDeath.AddDynamic(this, &AVL_TargetDummy::HandleDeath);
 }
 
-float AVL_TargetDummy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
-	AController* EventInstigator, AActor* DamageCauser)
+void AVL_TargetDummy::HandleHealthChanged(float NewHealth, float MaxHealth, float Delta)
 {
-	const float Applied = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-
-	Health -= Applied;
-
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red,
-			FString::Printf(TEXT("%s health: %.0f"), *GetName(), FMath::Max(Health, 0.f)));
+			FString::Printf(TEXT("%s health: %.0f"), *GetName(), NewHealth));
 	}
+}
 
-	if (Health <= 0.f)
-	{
-		Destroy();
-	}
-	return Applied;
+void AVL_TargetDummy::HandleDeath()
+{
+	Destroy();
 }

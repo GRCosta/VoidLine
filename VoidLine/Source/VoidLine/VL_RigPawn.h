@@ -9,6 +9,8 @@ class UInputAction;
 class UInputMappingContext;
 class USpringArmComponent;
 class UStaticMeshComponent;
+class UVL_HealthComponent;
+class UVL_ExposureComponent;
 struct FEnhancedInputActionValueBinding;
 struct FInputActionValue;
 
@@ -43,6 +45,12 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VL|Components")
 	TObjectPtr<UVL_WeaponComponent> WeaponComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VL|Components")
+	TObjectPtr<UVL_HealthComponent> HealthComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VL|Components")
+	TObjectPtr<UVL_ExposureComponent> ExposureComponent;
 
 	// ---- Input assets (assign these in the Blueprint subclass) ----
 	UPROPERTY(EditDefaultsOnly, Category = "VL|Input")
@@ -115,6 +123,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VL|Camera")
 	float CameraLookInterpSpeed = 5.f;
+
+	UFUNCTION()
+	void HandleRigDeath();
 
 private:
 

@@ -12,6 +12,8 @@
 #include "InputAction.h"
 #include "InputActionValue.h"
 #include "InputMappingContext.h"
+#include "VL_ExposureComponent.h"
+#include "VL_HealthComponent.h"
 #include "VL_WeaponComponent.h"
 
 AVL_RigPawn::AVL_RigPawn()
@@ -46,12 +48,16 @@ AVL_RigPawn::AVL_RigPawn()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 
+	HealthComponent = CreateDefaultSubobject<UVL_HealthComponent>(TEXT("HealthComponent"));
+	ExposureComponent = CreateDefaultSubobject<UVL_ExposureComponent>(TEXT("ExposureComponent"));
 	WeaponComponent = CreateDefaultSubobject<UVL_WeaponComponent>(TEXT("WeaponComponent"));
 }
 
 void AVL_RigPawn::BeginPlay()
 {
 	Super::BeginPlay();
+
+	HealthComponent->OnDeath.AddDynamic(this, &AVL_RigPawn::HandleRigDeath);
 
 	ApplyMovementTuning();
 
@@ -182,4 +188,25 @@ void AVL_RigPawn::Tick(float DeltaSeconds)
 		0.f);
 	CurrentCameraRot = FMath::RInterpTo(CurrentCameraRot, TargetCamRot, DeltaSeconds, CameraLookInterpSpeed);
 	CameraBoom->SetRelativeRotation(CurrentCameraRot);
+
+}
+void AVL_RigPawn::HandleRigDeath()
+{
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(104, 10.f, FColor::Red, TEXT("RIG DESTROYED - run failed (placeholder)"));
+	}
+
+	ExposureComponent->StopRun();
+	WeaponComponent->SetWeapon(nullptr);
+
+	// Zero the stored input so the rig stops driving, then stop listening to the controller.
+	SteerInput = ThrottleInput = BrakeInput = 0.f;
+	LookInput = FVector2D::ZeroVector;
+	bDriftInput = false;
+
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		DisableInput(PC);
+	}
 }
