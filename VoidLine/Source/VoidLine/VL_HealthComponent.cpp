@@ -43,3 +43,9 @@ void UVL_HealthComponent::ApplyDamage(float Amount)
 		OnDeath.Broadcast();
 	}
 }
+
+void UVL_HealthComponent::SetMaxHealth(float NewMax)
+{
+	MaxHealth = FMath::Max(NewMax, 1.f);
+	Health = MaxHealth;
+}

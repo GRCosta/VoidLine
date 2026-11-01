@@ -14,6 +14,7 @@
 #include "InputAction.h"
 #include "InputActionValue.h"
 #include "InputMappingContext.h"
+#include "VL_EnemySpawnerComponent.h"
 #include "VL_ExposureComponent.h"
 #include "VL_HealthComponent.h"
 #include "VL_WeaponComponent.h"
@@ -54,6 +55,7 @@ AVL_RigPawn::AVL_RigPawn()
 
 	HealthComponent = CreateDefaultSubobject<UVL_HealthComponent>(TEXT("HealthComponent"));
 	ExposureComponent = CreateDefaultSubobject<UVL_ExposureComponent>(TEXT("ExposureComponent"));
+	EnemySpawner = CreateDefaultSubobject<UVL_EnemySpawnerComponent>(TEXT("EnemySpawner"));
 	WeaponComponent = CreateDefaultSubobject<UVL_WeaponComponent>(TEXT("WeaponComponent"));
 }
 
@@ -202,6 +204,7 @@ void AVL_RigPawn::HandleRigDeath()
 	}
 
 	ExposureComponent->StopRun();
+	EnemySpawner->StopSpawning();
 	WeaponComponent->SetWeapon(nullptr);
 
 	// Zero the stored input so the rig stops driving, then stop listening to the controller.

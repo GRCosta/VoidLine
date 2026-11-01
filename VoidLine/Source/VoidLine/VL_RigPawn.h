@@ -15,6 +15,7 @@ struct FEnhancedInputActionValueBinding;
 struct FInputActionValue;
 
 class UVL_WeaponComponent;
+class UVL_EnemySpawnerComponent;
 
 UCLASS()
 class VOIDLINE_API AVL_RigPawn : public ACharacter
@@ -58,6 +59,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VL|Components")
 	TObjectPtr<UVL_ExposureComponent> ExposureComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VL|Components")
+	TObjectPtr<UVL_EnemySpawnerComponent> EnemySpawner;
 
 	// ---- Input assets (assign these in the Blueprint subclass) ----
 	UPROPERTY(EditDefaultsOnly, Category = "VL|Input")

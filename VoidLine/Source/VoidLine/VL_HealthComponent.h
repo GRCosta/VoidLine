@@ -38,6 +38,9 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "VL|Health")
 	FVL_OnDeath OnDeath;
 
+	// Sets max health and refills to full. Call before BeginPlay.
+	void SetMaxHealth(float NewMax);
+
 protected:
 	virtual void BeginPlay() override;
 
