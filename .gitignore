@@ -10,5 +10,5 @@ DerivedDataCache/
 *.opensdf
 *.VC.db
 *.VC.opendb
-Plugins/**/Binaries/
-Plugins/**/Intermediate/
+**/Plugins/**/Binaries/
+**/Plugins/**/Intermediate/
