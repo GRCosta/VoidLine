@@ -12,6 +12,8 @@ class UStaticMeshComponent;
 struct FEnhancedInputActionValueBinding;
 struct FInputActionValue;
 
+class UVL_WeaponComponent;
+
 UCLASS()
 class VOIDLINE_API AVL_RigPawn : public ACharacter
 {
@@ -38,6 +40,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VL|Components")
 	TObjectPtr<UCameraComponent> FollowCamera;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VL|Components")
+	TObjectPtr<UVL_WeaponComponent> WeaponComponent;
 
 	// ---- Input assets (assign these in the Blueprint subclass) ----
 	UPROPERTY(EditDefaultsOnly, Category = "VL|Input")

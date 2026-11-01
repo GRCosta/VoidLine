@@ -12,6 +12,7 @@
 #include "InputAction.h"
 #include "InputActionValue.h"
 #include "InputMappingContext.h"
+#include "VL_WeaponComponent.h"
 
 AVL_RigPawn::AVL_RigPawn()
 {
@@ -44,6 +45,8 @@ AVL_RigPawn::AVL_RigPawn()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
+
+	WeaponComponent = CreateDefaultSubobject<UVL_WeaponComponent>(TEXT("WeaponComponent"));
 }
 
 void AVL_RigPawn::BeginPlay()
