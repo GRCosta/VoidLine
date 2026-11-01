@@ -17,6 +17,8 @@
 #include "VL_EnemySpawnerComponent.h"
 #include "VL_ExposureComponent.h"
 #include "VL_HealthComponent.h"
+#include "VL_InteractionComponent.h"
+#include "VL_MinigameComponent.h"
 #include "VL_WeaponComponent.h"
 #include "VL_WorldStateSubsystem.h"
 
@@ -57,6 +59,8 @@ AVL_RigPawn::AVL_RigPawn()
 	ExposureComponent = CreateDefaultSubobject<UVL_ExposureComponent>(TEXT("ExposureComponent"));
 	EnemySpawner = CreateDefaultSubobject<UVL_EnemySpawnerComponent>(TEXT("EnemySpawner"));
 	WeaponComponent = CreateDefaultSubobject<UVL_WeaponComponent>(TEXT("WeaponComponent"));
+	InteractionComponent = CreateDefaultSubobject<UVL_InteractionComponent>(TEXT("InteractionComponent"));
+	MinigameComponent = CreateDefaultSubobject<UVL_MinigameComponent>(TEXT("MinigameComponent"));
 }
 
 void AVL_RigPawn::BeginPlay()
@@ -134,6 +138,24 @@ void AVL_RigPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	Bind(BrakeAction, &AVL_RigPawn::OnBrake, TEXT("BrakeAction"));
 	Bind(LookAction, &AVL_RigPawn::OnLook, TEXT("LookAction"));
 	Bind(DriftAction, &AVL_RigPawn::OnDrift, TEXT("DriftAction"));
+
+	if (InteractAction)
+	{
+		EIC->BindAction(InteractAction, ETriggerEvent::Started, this, &AVL_RigPawn::OnInteract);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("VL_RigPawn: InteractAction is not assigned in the Blueprint"));
+	}
+	
+	if (LaneLeftAction)
+	{
+		EIC->BindAction(LaneLeftAction, ETriggerEvent::Started, this, &AVL_RigPawn::OnLaneLeft);
+	}
+	if (LaneRightAction)
+	{
+		EIC->BindAction(LaneRightAction, ETriggerEvent::Started, this, &AVL_RigPawn::OnLaneRight);
+	}
 }
 
 void AVL_RigPawn::OnSteer(const FInputActionValue& Value) { SteerInput = Value.Get<float>(); }
@@ -147,11 +169,18 @@ void AVL_RigPawn::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	// ---- Read input ----
-	const float Steer = SteerInput;
-	const float Throttle = ThrottleInput;
-	const float Brake = BrakeInput;
+	// While a collection minigame runs, the rig holds still (but the camera still looks around).
+	const bool bLocked = InteractionComponent && InteractionComponent->IsCollecting();
+	const float Steer = bLocked ? 0.f : SteerInput;
+	const float Throttle = bLocked ? 0.f : ThrottleInput;
+	const float Brake = bLocked ? 0.f : BrakeInput;
 	const FVector2D Look = LookInput;
-	const bool bDrifting = bDriftInput;
+	const bool bDrifting = bLocked ? false : bDriftInput;
+
+	if (bLocked)
+	{
+		GetCharacterMovement()->StopMovementImmediately();
+	}
 
 	const FVector Forward = GetActorForwardVector();
 	const float ForwardSpeed = FVector::DotProduct(GetVelocity(), Forward);
@@ -184,8 +213,40 @@ void AVL_RigPawn::Tick(float DeltaSeconds)
 		AddMovementInput(GetActorForwardVector(), Drive > 0.f ? Drive : Drive * ReverseSpeedScale);
 	}
 
-	// ---- Grip: lower friction lets the rig slide through turns ----
-	GetCharacterMovement()->GroundFriction = bDrifting ? GripDrift : GripNormal;
+	// ---- Damping: remove sideways slide and let the rig slow down when coasting ----
+	{
+		UCharacterMovementComponent* Move = GetCharacterMovement();
+		if (Move->IsMovingOnGround())
+		{
+			const FVector Fwd = GetActorForwardVector();
+			const FVector Right = GetActorRightVector();
+			FVector Vel = Move->Velocity;
+
+			float ForwardSpeedNow = FVector::DotProduct(Vel, Fwd);
+			float Lateral = FVector::DotProduct(Vel, Right);
+
+			// Sideways velocity decays exponentially; less so while drifting.
+			const float Grip = bDrifting ? DriftLateralGrip : LateralGrip;
+			Lateral *= FMath::Exp(-Grip * DeltaSeconds);
+
+			// Forward velocity decays when off the throttle, faster with the brake.
+			float Drag = 0.f;
+			if (Throttle < 0.05f)
+			{
+				Drag += CoastDrag;
+			}
+			if (Brake > 0.05f)
+			{
+				Drag += BrakeDrag * Brake;
+			}
+			ForwardSpeedNow *= FMath::Exp(-Drag * DeltaSeconds);
+
+			const float VelZ = Vel.Z;
+			Vel = Fwd * ForwardSpeedNow + Right * Lateral;
+			Vel.Z = VelZ;
+			Move->Velocity = Vel;
+		}
+	}
 
 	// ---- Camera: right stick offsets the view, springs back to center ----
 	const FRotator TargetCamRot(
@@ -205,6 +266,7 @@ void AVL_RigPawn::HandleRigDeath()
 
 	ExposureComponent->StopRun();
 	EnemySpawner->StopSpawning();
+	InteractionComponent->CancelCollection();
 	WeaponComponent->SetWeapon(nullptr);
 
 	// Zero the stored input so the rig stops driving, then stop listening to the controller.
@@ -238,4 +300,19 @@ void AVL_RigPawn::VL_SetNight(int32 NewNight)
 			State->SetNight(NewNight);
 		}
 	}
+}
+
+void AVL_RigPawn::OnInteract(const FInputActionValue& Value)
+{
+	InteractionComponent->TryInteract();
+}
+
+void AVL_RigPawn::OnLaneLeft(const FInputActionValue& Value)
+{
+	MinigameComponent->SendInput(EVL_MinigameInput::Left);
+}
+
+void AVL_RigPawn::OnLaneRight(const FInputActionValue& Value)
+{
+	MinigameComponent->SendInput(EVL_MinigameInput::Right);
 }

@@ -35,7 +35,10 @@ protected:
 private:
 	void RestartTimer();
 	void Fire();
-	AActor* FindNearestTarget() const;
+	AActor* FindNearestTarget();
+
+	// Targets that already have a killing shot in flight, with the time the claim expires.
+	TMap<TWeakObjectPtr<AActor>, float> Claims;
 
 	FTimerHandle FireTimer;
 };

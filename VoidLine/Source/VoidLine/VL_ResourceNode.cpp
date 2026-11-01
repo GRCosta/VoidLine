@@ -1,35 +1,106 @@
 #include "VL_ResourceNode.h"
 
+#include "Camera/PlayerCameraManager.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/TextRenderComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Kismet/GameplayStatics.h"
+#include "VL_ResourceDefinition.h"
 
 AVL_ResourceNode::AVL_ResourceNode()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
+
+	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	RootComponent = Root;
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+	Mesh->SetupAttachment(Root);
 	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	RootComponent = Mesh;
+
+	// Attached to the root (not the mesh) so it doesn't inherit the mesh's scale.
+	Label = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Label"));
+	Label->SetupAttachment(Root);
+	Label->SetRelativeLocation(FVector(0.f, 0.f, 160.f));
+	Label->SetHorizontalAlignment(EHTA_Center);
+	Label->SetVerticalAlignment(EVRTA_TextCenter);
+	Label->SetWorldSize(120.f);
+	Label->SetTextRenderColor(FColor(255, 220, 80));
+	Label->SetVisibility(false);
 }
 
-void AVL_ResourceNode::Init(EVL_ResourceType InType)
+void AVL_ResourceNode::Init(UVL_ResourceDefinition* InDefinition)
 {
-	ResourceType = InType;
+	Definition = InDefinition;
 
-	const TCHAR* Path = TEXT("/Engine/BasicShapes/Cube.Cube");
+	UStaticMesh* Shape = nullptr;
 	FVector Scale(0.7f);
+	FString Name = TEXT("Resource");
 
-	switch (InType)
+	if (InDefinition)
 	{
-	case EVL_ResourceType::Fuel:      Path = TEXT("/Engine/BasicShapes/Cylinder.Cylinder"); Scale = FVector(0.6f, 0.6f, 0.9f); break;
-	case EVL_ResourceType::Chemicals: Path = TEXT("/Engine/BasicShapes/Cone.Cone");         Scale = FVector(0.7f, 0.7f, 0.9f); break;
-	case EVL_ResourceType::Relics:    Path = TEXT("/Engine/BasicShapes/Sphere.Sphere");     Scale = FVector(0.8f);             break;
-	default: break;
+		Shape = InDefinition->Mesh.LoadSynchronous();
+		Scale = InDefinition->MeshScale;
+		Name = InDefinition->DisplayName.ToString();
 	}
 
-	if (UStaticMesh* Loaded = LoadObject<UStaticMesh>(nullptr, Path))
+	if (!Shape)
 	{
-		Mesh->SetStaticMesh(Loaded);
+		Shape = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
+	}
+	if (Shape)
+	{
+		Mesh->SetStaticMesh(Shape);
 	}
 	Mesh->SetRelativeScale3D(Scale);
+
+	DisplayName = Name;
+	UpdateLabel();
+}
+
+void AVL_ResourceNode::SetFocused(bool bInFocused)
+{
+	bFocused = bInFocused;
+	UpdateLabel();
+}
+
+void AVL_ResourceNode::UpdateLabel()
+{
+	const FString Text = bFocused ? DisplayName + TEXT("\n[X] Collect") : DisplayName;
+	Label->SetText(FText::FromString(Text));
+}
+
+void AVL_ResourceNode::SetIndicatorVisible(bool bVisible)
+{
+	bIndicatorShown = bVisible;
+	Label->SetVisibility(bVisible);
+}
+
+void AVL_ResourceNode::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	AActor* PlayerActor = Player.Get();
+	if (!PlayerActor)
+	{
+		Player = UGameplayStatics::GetPlayerPawn(this, 0);
+		return;
+	}
+
+	const bool bNear = FVector::DistSquared(PlayerActor->GetActorLocation(), GetActorLocation())
+		<= FMath::Square(IndicatorRadius);
+
+	if (bNear != bIndicatorShown)
+	{
+		SetIndicatorVisible(bNear);
+	}
+
+	// Turn the label to face the camera.
+	if (bIndicatorShown)
+	{
+		if (const APlayerCameraManager* Camera = UGameplayStatics::GetPlayerCameraManager(this, 0))
+		{
+			Label->SetWorldRotation((Camera->GetCameraLocation() - Label->GetComponentLocation()).Rotation());
+		}
+	}
 }

@@ -4,6 +4,7 @@
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+#include "VL_HealthComponent.h"
 #include "VL_Projectile.h"
 #include "VL_WeaponDefinition.h"
 
@@ -81,15 +82,26 @@ void UVL_WeaponComponent::RestartTimer()
 	}
 }
 
-AActor* UVL_WeaponComponent::FindNearestTarget() const
+AActor* UVL_WeaponComponent::FindNearestTarget()
 {
-	if (!Weapon || !GetOwner())
+	UWorld* World = GetWorld();
+	if (!Weapon || !GetOwner() || !World)
 	{
 		return nullptr;
 	}
 
+	// Drop claims that expired or whose target is gone.
+	const float Now = World->GetTimeSeconds();
+	for (auto It = Claims.CreateIterator(); It; ++It)
+	{
+		if (!It.Key().IsValid() || It.Value() <= Now)
+		{
+			It.RemoveCurrent();
+		}
+	}
+
 	TArray<AActor*> Candidates;
-	UGameplayStatics::GetAllActorsWithTag(GetWorld(), TargetTag, Candidates);
+	UGameplayStatics::GetAllActorsWithTag(World, TargetTag, Candidates);
 
 	const FVector Origin = GetOwner()->GetActorLocation();
 	float BestDistSq = FMath::Square(Weapon->Range);
@@ -97,7 +109,7 @@ AActor* UVL_WeaponComponent::FindNearestTarget() const
 
 	for (AActor* Candidate : Candidates)
 	{
-		if (!IsValid(Candidate))
+		if (!IsValid(Candidate) || Claims.Contains(TWeakObjectPtr<AActor>(Candidate)))
 		{
 			continue;
 		}
@@ -138,5 +150,16 @@ void UVL_WeaponComponent::Fire()
 		Weapon->ProjectileClass, Muzzle, Direction.Rotation(), Params))
 	{
 		Projectile->Init(Weapon->Damage, Weapon->ProjectileSpeed, Weapon->Range);
+	}
+
+	// If this shot will kill, claim the target until it should have landed.
+	if (const UVL_HealthComponent* TargetHealth = Target->FindComponentByClass<UVL_HealthComponent>())
+	{
+		if (Weapon->Damage >= TargetHealth->GetHealth())
+		{
+			const float FlightTime = FVector::Dist(Muzzle, Target->GetActorLocation())
+				/ FMath::Max(Weapon->ProjectileSpeed, 1.f);
+			Claims.Add(TWeakObjectPtr<AActor>(Target), GetWorld()->GetTimeSeconds() + FlightTime + 0.25f);
+		}
 	}
 }

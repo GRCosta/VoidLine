@@ -6,6 +6,7 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "UObject/ConstructorHelpers.h"
+#include "VL_ResourceDefinition.h"
 #include "VL_ResourceNode.h"
 #include "VL_WorldStateSubsystem.h"
 
@@ -134,17 +135,21 @@ void AVL_GhostTownGenerator::Generate()
 	}
 
 	// Shuffle the open cells, then place resources in the first few.
+		// Shuffle the open cells, then place resources in the first few.
 	for (int32 K = FreeCells.Num() - 1; K > 0; --K)
 	{
 		FreeCells.Swap(K, Stream.RandRange(0, K));
 	}
 
-	int32 TypeCounts[4] = { 0, 0, 0, 0 };
-	const int32 NodeCount = FMath::Min(ResourceCount, FreeCells.Num());
+	TArray<int32> TypeCounts;
+	TypeCounts.Init(0, ResourceTypes.Num());
+
+	const int32 NodeCount = (ResourceTypes.Num() > 0) ? FMath::Min(ResourceCount, FreeCells.Num()) : 0;
 
 	for (int32 K = 0; K < NodeCount; ++K)
 	{
-		const int32 TypeIndex = Stream.RandRange(0, 3);
+		const int32 TypeIndex = Stream.RandRange(0, ResourceTypes.Num() - 1);
+		UVL_ResourceDefinition* Type = ResourceTypes[TypeIndex];
 		const FVector WorldPos = GetActorTransform().TransformPosition(FreeCells[K] + FVector(0.f, 0.f, 60.f));
 
 		FActorSpawnParameters Params;
@@ -153,7 +158,7 @@ void AVL_GhostTownGenerator::Generate()
 		if (AVL_ResourceNode* Node = World->SpawnActor<AVL_ResourceNode>(
 			AVL_ResourceNode::StaticClass(), WorldPos, FRotator::ZeroRotator, Params))
 		{
-			Node->Init(static_cast<EVL_ResourceType>(TypeIndex));
+			Node->Init(Type);
 			SpawnedNodes.Add(Node);
 			++TypeCounts[TypeIndex];
 		}
@@ -161,8 +166,19 @@ void AVL_GhostTownGenerator::Generate()
 
 	if (GEngine)
 	{
+		FString Counts;
+		for (int32 i = 0; i < ResourceTypes.Num(); ++i)
+		{
+			const FString Name = ResourceTypes[i] ? ResourceTypes[i]->DisplayName.ToString() : TEXT("?");
+			Counts += FString::Printf(TEXT("  %s %d"), *Name, TypeCounts[i]);
+		}
+		if (ResourceTypes.Num() == 0)
+		{
+			Counts = TEXT("  NO RESOURCE TYPES ASSIGNED");
+		}
+
 		GEngine->AddOnScreenDebugMessage(105 + TownId, 8.f, FColor::Cyan,
-			FString::Printf(TEXT("Town %d | Night %d | Seed %d | Buildings %d | Cube(Scrap) %d, Cylinder(Fuel) %d, Cone(Chem) %d, Sphere(Relics) %d"),
-				TownId, Night, Seed, BuildingCount, TypeCounts[0], TypeCounts[1], TypeCounts[2], TypeCounts[3]));
+			FString::Printf(TEXT("Town %d | Night %d | Seed %d | Buildings %d |%s"),
+				TownId, Night, Seed, BuildingCount, *Counts));
 	}
 }

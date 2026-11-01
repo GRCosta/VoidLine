@@ -16,6 +16,8 @@ struct FInputActionValue;
 
 class UVL_WeaponComponent;
 class UVL_EnemySpawnerComponent;
+class UVL_InteractionComponent;
+class UVL_MinigameComponent;
 
 UCLASS()
 class VOIDLINE_API AVL_RigPawn : public ACharacter
@@ -63,6 +65,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VL|Components")
 	TObjectPtr<UVL_EnemySpawnerComponent> EnemySpawner;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VL|Components")
+	TObjectPtr<UVL_InteractionComponent> InteractionComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VL|Components")
+	TObjectPtr<UVL_MinigameComponent> MinigameComponent;
+
 	// ---- Input assets (assign these in the Blueprint subclass) ----
 	UPROPERTY(EditDefaultsOnly, Category = "VL|Input")
 	TObjectPtr<UInputMappingContext> DrivingContext;
@@ -81,6 +89,15 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "VL|Input")
 	TObjectPtr<UInputAction> DriftAction;     // Digital (bool)
+
+	UPROPERTY(EditDefaultsOnly, Category = "VL|Input")
+	TObjectPtr<UInputAction> InteractAction;  // Digital (bool)
+
+	UPROPERTY(EditDefaultsOnly, Category = "VL|Input")
+	TObjectPtr<UInputAction> LaneLeftAction;   // Digital (bool), left bumper
+
+	UPROPERTY(EditDefaultsOnly, Category = "VL|Input")
+	TObjectPtr<UInputAction> LaneRightAction;  // Digital (bool), right bumper
 
 	// ---- Driving tuning (cm, cm/s, degrees) ----
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VL|Driving")
@@ -109,12 +126,21 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VL|Driving")
 	float MinSpeedForFullTurn = 300.f;
 
-	// Higher grip = velocity follows heading faster. Lower = more slide.
+	// Sideways sliding fades at this rate (per second). Higher = more grip.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VL|Driving")
-	float GripNormal = 8.f;
+	float LateralGrip = 10.f;
 
+	// Same while drifting. Lower = longer slides.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VL|Driving")
-	float GripDrift = 1.5f;
+	float DriftLateralGrip = 2.f;
+
+	// Forward speed bleeds off at this rate (per second) when you're off the throttle.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VL|Driving")
+	float CoastDrag = 1.5f;
+
+	// Extra forward slowdown while the brake trigger is held (scaled by how far it's pressed).
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VL|Driving")
+	float BrakeDrag = 4.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VL|Driving")
 	float DriftTurnMultiplier = 1.5f;
@@ -145,6 +171,9 @@ private:
 	void OnBrake(const FInputActionValue& Value);
 	void OnLook(const FInputActionValue& Value);
 	void OnDrift(const FInputActionValue& Value);
+	void OnInteract(const FInputActionValue& Value);
+	void OnLaneLeft(const FInputActionValue& Value);
+	void OnLaneRight(const FInputActionValue& Value);
 
 	float SteerInput = 0.f;
 	float ThrottleInput = 0.f;

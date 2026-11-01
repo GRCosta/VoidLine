@@ -5,6 +5,7 @@
 #include "VL_GhostTownGenerator.generated.h"
 
 class UInstancedStaticMeshComponent;
+class UVL_ResourceDefinition;
 
 // Builds a ghost town zone from the night's seed: a street lattice with random
 // blocks of buildings, plus resource nodes in the open cells.
@@ -54,6 +55,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "VL|Generation", meta = (ClampMin = "0"))
 	int32 ResourceCount = 8;
+
+	// The resource types this town can contain. Assign your resource data assets here.
+	UPROPERTY(EditAnywhere, Category = "VL|Generation")
+	TArray<TObjectPtr<UVL_ResourceDefinition>> ResourceTypes;
 
 private:
 	UPROPERTY(Transient)
