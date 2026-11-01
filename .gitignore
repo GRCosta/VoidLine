@@ -1,0 +1,14 @@
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+.vs/
+.idea/
+*.sln
+*.suo
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.opendb
+Plugins/**/Binaries/
+Plugins/**/Intermediate/
