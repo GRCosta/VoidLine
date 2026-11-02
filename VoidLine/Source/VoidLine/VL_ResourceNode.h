@@ -22,8 +22,8 @@ public:
 
 	void Init(UVL_ResourceDefinition* InDefinition);
 
-	// The nearest node in reach shows a button prompt on its label.
-	void SetFocused(bool bInFocused);
+	// The nearest node in reach shows a prompt: collect, or what's missing.
+	void SetFocused(bool bInFocused, bool bInCanCollect = true);
 
 	UVL_ResourceDefinition* GetDefinition() const { return Definition; }
 	FString GetDisplayName() const { return DisplayName; }
@@ -51,6 +51,8 @@ private:
 
 	FString DisplayName;
 	bool bFocused = false;
+
+	bool bCanCollect = true;
 
 	TWeakObjectPtr<AActor> Player;
 	bool bIndicatorShown = false;

@@ -24,7 +24,9 @@
 #include "VL_WorldStateSubsystem.h"
 #include "VL_EquipmentDefinition.h"
 #include "VL_LoadoutSubsystem.h"
+#include "VL_LoadoutPreset.h"
 #include "VL_ResourceDefinition.h"
+#include "VL_WeaponDefinition.h"
 
 
 namespace
@@ -102,6 +104,19 @@ void AVL_RigPawn::BeginPlay()
 	CameraBoom->TargetArmLength = CameraArmLength;
 	CurrentCameraRot = FRotator(CameraPitch, 0.f, 0.f);
 	CameraBoom->SetRelativeRotation(CurrentCameraRot);
+
+	if (UVL_LoadoutSubsystem* Loadout = FindLoadout(this))
+	{
+		// Test setup: fill the bed from a preset when it's empty.
+		if (TestLoadout && Loadout->GetLayout().Items.Num() == 0)
+		{
+			Loadout->ApplyPreset(TestLoadout);
+		}
+
+		// Re-read the bed whenever it changes (console commands for now, the garage later).
+		Loadout->OnChanged.AddUObject(this, &AVL_RigPawn::ApplyLoadout);
+	}
+	ApplyLoadout();
 }
 
 // Re-applies the editable tuning values to the movement component,
@@ -420,4 +435,29 @@ void AVL_RigPawn::VL_BedSize(int32 Width, int32 Height)
 		Loadout->SetBedSize(FIntPoint(Width, Height));
 		ShowMessage(FString::Printf(TEXT("Bed resized to %dx%d (cleared)"), Width, Height), FColor::Green);
 	}
+}
+
+void AVL_RigPawn::ApplyLoadout()
+{
+	if (HealthComponent && HealthComponent->IsDead())
+	{
+		return;
+	}
+
+	UVL_WeaponDefinition* Chosen = nullptr;
+
+	if (const UVL_LoadoutSubsystem* Loadout = FindLoadout(this))
+	{
+		for (const FVL_PlacedItem& Item : Loadout->GetLayout().Items)
+		{
+			if (Item.Equipment && Item.Equipment->Type == EVL_EquipmentType::Weapon && Item.Equipment->Weapon)
+			{
+				Chosen = Item.Equipment->Weapon;
+				break;
+			}
+		}
+	}
+
+	// No weapon in the bed means an unarmed rig. Only the first weapon is used for now.
+	WeaponComponent->SetWeapon(Chosen);
 }

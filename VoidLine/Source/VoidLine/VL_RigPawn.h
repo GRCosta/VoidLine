@@ -21,6 +21,7 @@ class UVL_InventoryComponent;
 class UVL_MinigameComponent;
 
 class UVL_EquipmentDefinition;
+class UVL_LoadoutPreset;
 class UVL_ResourceDefinition;
 
 UCLASS()
@@ -193,6 +194,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "VL|Debug")
 	TArray<TObjectPtr<UVL_ResourceDefinition>> DebugResources;
 
+	// Test setup: fills the bed from this preset when it is empty at the start of a run.
+	// The city hub will do this for real later.
+	UPROPERTY(EditDefaultsOnly, Category = "VL|Debug")
+	TObjectPtr<UVL_LoadoutPreset> TestLoadout;
+
 private:
 
 	void OnSteer(const FInputActionValue& Value);
@@ -203,6 +209,9 @@ private:
 	void OnInteract(const FInputActionValue& Value);
 	void OnLaneLeft(const FInputActionValue& Value);
 	void OnLaneRight(const FInputActionValue& Value);
+
+	// Reads the bed and arms the rig with the first weapon in it.
+	void ApplyLoadout();
 
 	float SteerInput = 0.f;
 	float ThrottleInput = 0.f;

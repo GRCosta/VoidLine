@@ -7,6 +7,7 @@
 
 class UVL_EquipmentDefinition;
 class UVL_ResourceDefinition;
+class UVL_LoadoutPreset;
 
 DECLARE_MULTICAST_DELEGATE(FVL_OnLoadoutChanged);
 
@@ -29,6 +30,12 @@ public:
 	const FVL_BedLayout& GetLayout() const { return BedLayout; }
 
 	FVL_OnLoadoutChanged OnChanged;
+
+	// Replaces the bed with a preset's arrangement. Pieces that don't fit are skipped.
+	void ApplyPreset(const UVL_LoadoutPreset* Preset);
+
+	// True if the bed holds a collector for this resource AND its container.
+	bool CanCollect(const UVL_ResourceDefinition* Resource) const;
 
 private:
 	UPROPERTY()

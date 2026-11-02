@@ -2,6 +2,8 @@
 
 #include "VL_EquipmentDefinition.h"
 #include "VL_ResourceDefinition.h"
+#include "VL_LoadoutPreset.h"
+
 
 bool UVL_LoadoutSubsystem::PlaceEquipment(UVL_EquipmentDefinition* Equipment, FIntPoint Origin, int32 Rotation)
 {
@@ -63,4 +65,27 @@ void UVL_LoadoutSubsystem::SetBedSize(FIntPoint NewSize)
 	BedLayout.GridSize = FIntPoint(FMath::Clamp(NewSize.X, 2, 10), FMath::Clamp(NewSize.Y, 2, 10));
 	BedLayout.Items.Reset();
 	OnChanged.Broadcast();
+}
+
+void UVL_LoadoutSubsystem::ApplyPreset(const UVL_LoadoutPreset* Preset)
+{
+	if (!Preset)
+	{
+		return;
+	}
+
+	BedLayout.GridSize = FIntPoint(FMath::Clamp(Preset->GridSize.X, 2, 10), FMath::Clamp(Preset->GridSize.Y, 2, 10));
+	BedLayout.Items.Reset();
+
+	for (const FVL_PlacedItem& Item : Preset->Items)
+	{
+		BedLayout.TryPlace(Item);
+	}
+
+	OnChanged.Broadcast();
+}
+
+bool UVL_LoadoutSubsystem::CanCollect(const UVL_ResourceDefinition* Resource) const
+{
+	return BedLayout.HasCollectorFor(Resource) && BedLayout.HasContainerFor(Resource);
 }

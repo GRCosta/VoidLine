@@ -3,9 +3,11 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "Engine/GameInstance.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
 #include "VL_InventoryComponent.h"
+#include "VL_LoadoutSubsystem.h"
 #include "VL_MinigameComponent.h"
 #include "VL_ResourceDefinition.h"
 #include "VL_ResourceNode.h"
@@ -54,6 +56,24 @@ void UVL_InteractionComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	}
 }
 
+bool UVL_InteractionComponent::CanCollect(const AVL_ResourceNode* Node) const
+{
+	const UVL_ResourceDefinition* Resource = Node ? Node->GetDefinition() : nullptr;
+	if (!Resource || !GetWorld())
+	{
+		return false;
+	}
+
+	if (const UGameInstance* GameInstance = GetWorld()->GetGameInstance())
+	{
+		if (const UVL_LoadoutSubsystem* Loadout = GameInstance->GetSubsystem<UVL_LoadoutSubsystem>())
+		{
+			return Loadout->CanCollect(Resource);
+		}
+	}
+	return false;
+}
+
 void UVL_InteractionComponent::FindFocus()
 {
 	const FVector Origin = GetOwner()->GetActorLocation();
@@ -70,6 +90,12 @@ void UVL_InteractionComponent::FindFocus()
 		}
 	}
 	SetFocus(Best);
+
+	// Keep the prompt in step with the bed (the loadout can change).
+	if (Best)
+	{
+		Best->SetFocused(true, CanCollect(Best));
+	}
 }
 
 void UVL_InteractionComponent::SetFocus(AVL_ResourceNode* NewFocus)
@@ -86,7 +112,7 @@ void UVL_InteractionComponent::SetFocus(AVL_ResourceNode* NewFocus)
 	Focus = NewFocus;
 	if (NewFocus)
 	{
-		NewFocus->SetFocused(true);
+		NewFocus->SetFocused(true, CanCollect(NewFocus));
 	}
 }
 
@@ -95,6 +121,16 @@ void UVL_InteractionComponent::TryInteract()
 	AVL_ResourceNode* Node = Focus.Get();
 	if (!GetWorld() || bCollecting || !Node)
 	{
+		return;
+	}
+
+	if (!CanCollect(Node))
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(108, 4.f, FColor::Red,
+				FString::Printf(TEXT("The bed needs a %s collector and its container"), *Node->GetDisplayName()));
+		}
 		return;
 	}
 

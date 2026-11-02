@@ -58,16 +58,36 @@ void AVL_ResourceNode::Init(UVL_ResourceDefinition* InDefinition)
 	UpdateLabel();
 }
 
-void AVL_ResourceNode::SetFocused(bool bInFocused)
+void AVL_ResourceNode::SetFocused(bool bInFocused, bool bInCanCollect)
 {
+	if (bFocused == bInFocused && bCanCollect == bInCanCollect)
+	{
+		return;
+	}
+
 	bFocused = bInFocused;
+	bCanCollect = bInCanCollect;
 	UpdateLabel();
 }
 
 void AVL_ResourceNode::UpdateLabel()
 {
-	const FString Text = bFocused ? DisplayName + TEXT("\n[X] Collect") : DisplayName;
+	FString Text = DisplayName;
+
+	if (bFocused)
+	{
+		if (bCanCollect)
+		{
+			Text += TEXT("\n[X] Collect");
+		}
+		else
+		{
+			Text += FString::Printf(TEXT("\nNeeds %s collector"), *DisplayName);
+		}
+	}
+
 	Label->SetText(FText::FromString(Text));
+	Label->SetTextRenderColor((bFocused && !bCanCollect) ? FColor(255, 90, 90) : FColor(255, 220, 80));
 }
 
 void AVL_ResourceNode::SetIndicatorVisible(bool bVisible)

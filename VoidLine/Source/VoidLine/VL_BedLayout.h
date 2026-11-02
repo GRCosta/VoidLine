@@ -13,18 +13,18 @@ struct FVL_PlacedItem
 	GENERATED_BODY()
 
 	// Set for equipment pieces.
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Placed Item")
 	TObjectPtr<UVL_EquipmentDefinition> Equipment = nullptr;
 
-	// Set for 1x1 resource containers (Equipment is null then).
-	UPROPERTY()
+	// Set for 1x1 resource containers (leave Equipment empty then).
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Placed Item")
 	TObjectPtr<UVL_ResourceDefinition> ContainerFor = nullptr;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Placed Item")
 	FIntPoint Origin = FIntPoint::ZeroValue;
 
 	// Quarter turns, 0 to 3.
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Placed Item", meta = (ClampMin = "0", ClampMax = "3"))
 	int32 Rotation = 0;
 };
 

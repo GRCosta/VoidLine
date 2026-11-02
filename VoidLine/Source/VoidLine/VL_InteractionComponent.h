@@ -41,6 +41,7 @@ private:
 	void SetFocus(AVL_ResourceNode* NewFocus);
 	void HandleMinigameFinished(int32 PiecesCollected);
 	void FinishCollection(bool bCompleted, int32 PiecesCollected);
+	bool CanCollect(const AVL_ResourceNode* Node) const;
 
 	TWeakObjectPtr<AVL_ResourceNode> Focus;
 	TWeakObjectPtr<AVL_ResourceNode> Active;
