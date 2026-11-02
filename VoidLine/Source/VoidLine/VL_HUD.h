@@ -17,4 +17,5 @@ public:
 
 private:
 	void DrawInventory(const UVL_InventoryComponent* Inventory);
+	void DrawBed();
 };

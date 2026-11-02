@@ -3,6 +3,10 @@
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
 #include "GameFramework/Pawn.h"
+#include "Engine/GameInstance.h"
+#include "Engine/World.h"
+#include "VL_EquipmentDefinition.h"
+#include "VL_LoadoutSubsystem.h"
 #include "VL_InventoryComponent.h"
 #include "VL_MinigameComponent.h"
 #include "VL_ResourceDefinition.h"
@@ -21,6 +25,7 @@ void AVL_HUD::DrawHUD()
 	if (const UVL_InventoryComponent* Inventory = OwnerPawn->FindComponentByClass<UVL_InventoryComponent>())
 	{
 		DrawInventory(Inventory);
+		DrawBed();
 	}
 
 	const UVL_MinigameComponent* Minigame = OwnerPawn->FindComponentByClass<UVL_MinigameComponent>();
@@ -92,5 +97,71 @@ void AVL_HUD::DrawInventory(const UVL_InventoryComponent* Inventory)
 		DrawText(FString::Printf(TEXT("%s  %d"), *Item.Resource->DisplayName.ToString(), Item.Amount),
 			FLinearColor(0.7f, 0.7f, 0.7f), X, Y, Font, 1.f);
 		Y += 30.f;
+	}
+
+
+}
+
+void AVL_HUD::DrawBed()
+{
+	const UWorld* World = GetWorld();
+	const UGameInstance* GameInstance = World ? World->GetGameInstance() : nullptr;
+	const UVL_LoadoutSubsystem* Loadout = GameInstance ? GameInstance->GetSubsystem<UVL_LoadoutSubsystem>() : nullptr;
+	if (!Loadout)
+	{
+		return;
+	}
+
+	const FVL_BedLayout& Bed = Loadout->GetLayout();
+
+	// Layout: bottom-left corner.
+	const float CellSize = 40.f;
+	const float Gap = 3.f;
+	const float Height = Bed.GridSize.Y * (CellSize + Gap);
+	const float X0 = 40.f;
+	const float Y0 = Canvas->SizeY - Height - 40.f;
+
+	UFont* Font = GEngine->GetMediumFont();
+	DrawText(FString::Printf(TEXT("BED %dx%d"), Bed.GridSize.X, Bed.GridSize.Y),
+		FLinearColor::White, X0, Y0 - 28.f, Font, 1.f);
+
+	// Empty cells.
+	for (int32 Y = 0; Y < Bed.GridSize.Y; ++Y)
+	{
+		for (int32 X = 0; X < Bed.GridSize.X; ++X)
+		{
+			DrawRect(FLinearColor(0.1f, 0.1f, 0.1f, 0.8f),
+				X0 + X * (CellSize + Gap), Y0 + Y * (CellSize + Gap), CellSize, CellSize);
+		}
+	}
+
+	// Placed items, with a short label on their first cell.
+	for (const FVL_PlacedItem& Item : Bed.Items)
+	{
+		FLinearColor Color(0.2f, 0.7f, 0.8f); // container
+		FString Label;
+
+		if (Item.Equipment)
+		{
+			Color = Item.Equipment->Color;
+			Label = Item.Equipment->DisplayName.ToString().Left(2);
+		}
+		else if (Item.ContainerFor)
+		{
+			Label = Item.ContainerFor->DisplayName.ToString().Left(2);
+		}
+
+		const TArray<FIntPoint> Cells = FVL_BedLayout::GetItemCells(Item);
+		for (int32 i = 0; i < Cells.Num(); ++i)
+		{
+			const float CellX = X0 + Cells[i].X * (CellSize + Gap);
+			const float CellY = Y0 + Cells[i].Y * (CellSize + Gap);
+			DrawRect(Color, CellX, CellY, CellSize, CellSize);
+
+			if (i == 0)
+			{
+				DrawText(Label, FLinearColor::Black, CellX + 6.f, CellY + 8.f, Font, 1.f);
+			}
+		}
 	}
 }

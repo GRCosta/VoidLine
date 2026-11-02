@@ -22,7 +22,33 @@
 #include "VL_MinigameComponent.h"
 #include "VL_WeaponComponent.h"
 #include "VL_WorldStateSubsystem.h"
+#include "VL_EquipmentDefinition.h"
+#include "VL_LoadoutSubsystem.h"
+#include "VL_ResourceDefinition.h"
 
+
+namespace
+{
+	UVL_LoadoutSubsystem* FindLoadout(const UObject* WorldContext)
+	{
+		if (const UWorld* World = WorldContext->GetWorld())
+		{
+			if (UGameInstance* GameInstance = World->GetGameInstance())
+			{
+				return GameInstance->GetSubsystem<UVL_LoadoutSubsystem>();
+			}
+		}
+		return nullptr;
+	}
+
+	void ShowMessage(const FString& Text, const FColor& Color)
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(109, 4.f, Color, Text);
+		}
+	}
+}
 
 AVL_RigPawn::AVL_RigPawn()
 {
@@ -317,4 +343,81 @@ void AVL_RigPawn::OnLaneLeft(const FInputActionValue& Value)
 void AVL_RigPawn::OnLaneRight(const FInputActionValue& Value)
 {
 	MinigameComponent->SendInput(EVL_MinigameInput::Right);
+}
+
+void AVL_RigPawn::VL_Equip(int32 EquipmentIndex, int32 X, int32 Y, int32 Rotation)
+{
+	UVL_LoadoutSubsystem* Loadout = FindLoadout(this);
+	if (!Loadout || !DebugEquipment.IsValidIndex(EquipmentIndex) || !DebugEquipment[EquipmentIndex])
+	{
+		ShowMessage(TEXT("VL_Equip: bad equipment index (fill Debug Equipment on BP_VL_Rig)"), FColor::Red);
+		return;
+	}
+
+	UVL_EquipmentDefinition* Equipment = DebugEquipment[EquipmentIndex];
+	const FString Name = Equipment->DisplayName.ToString();
+
+	if (Loadout->PlaceEquipment(Equipment, FIntPoint(X, Y), Rotation))
+	{
+		ShowMessage(FString::Printf(TEXT("Placed %s at (%d,%d), rotation %d"), *Name, X, Y, Rotation), FColor::Green);
+	}
+	else
+	{
+		ShowMessage(FString::Printf(TEXT("Cannot place %s there (outside the bed or overlapping)"), *Name), FColor::Orange);
+	}
+}
+
+void AVL_RigPawn::VL_Container(int32 ResourceIndex, int32 X, int32 Y)
+{
+	UVL_LoadoutSubsystem* Loadout = FindLoadout(this);
+	if (!Loadout || !DebugResources.IsValidIndex(ResourceIndex) || !DebugResources[ResourceIndex])
+	{
+		ShowMessage(TEXT("VL_Container: bad resource index (fill Debug Resources on BP_VL_Rig)"), FColor::Red);
+		return;
+	}
+
+	UVL_ResourceDefinition* Resource = DebugResources[ResourceIndex];
+	const FString Name = Resource->DisplayName.ToString();
+
+	if (Loadout->PlaceContainer(Resource, FIntPoint(X, Y)))
+	{
+		ShowMessage(FString::Printf(TEXT("Placed %s container at (%d,%d)"), *Name, X, Y), FColor::Green);
+	}
+	else
+	{
+		ShowMessage(FString::Printf(TEXT("Cannot place %s container there (outside, overlapping, or already have one)"), *Name), FColor::Orange);
+	}
+}
+
+void AVL_RigPawn::VL_Unequip(int32 X, int32 Y)
+{
+	if (UVL_LoadoutSubsystem* Loadout = FindLoadout(this))
+	{
+		if (Loadout->RemoveAtCell(FIntPoint(X, Y)))
+		{
+			ShowMessage(FString::Printf(TEXT("Removed the item at (%d,%d)"), X, Y), FColor::Green);
+		}
+		else
+		{
+			ShowMessage(FString::Printf(TEXT("Nothing at (%d,%d)"), X, Y), FColor::Orange);
+		}
+	}
+}
+
+void AVL_RigPawn::VL_ClearBed()
+{
+	if (UVL_LoadoutSubsystem* Loadout = FindLoadout(this))
+	{
+		Loadout->ClearBed();
+		ShowMessage(TEXT("Bed cleared"), FColor::Green);
+	}
+}
+
+void AVL_RigPawn::VL_BedSize(int32 Width, int32 Height)
+{
+	if (UVL_LoadoutSubsystem* Loadout = FindLoadout(this))
+	{
+		Loadout->SetBedSize(FIntPoint(Width, Height));
+		ShowMessage(FString::Printf(TEXT("Bed resized to %dx%d (cleared)"), Width, Height), FColor::Green);
+	}
 }

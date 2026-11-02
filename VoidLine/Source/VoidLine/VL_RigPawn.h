@@ -20,6 +20,9 @@ class UVL_InteractionComponent;
 class UVL_InventoryComponent;
 class UVL_MinigameComponent;
 
+class UVL_EquipmentDefinition;
+class UVL_ResourceDefinition;
+
 UCLASS()
 class VOIDLINE_API AVL_RigPawn : public ACharacter
 {
@@ -38,6 +41,21 @@ public:
 
 	UFUNCTION(Exec)
 	void VL_SetNight(int32 NewNight);
+
+	UFUNCTION(Exec)
+	void VL_Equip(int32 EquipmentIndex, int32 X, int32 Y, int32 Rotation);
+
+	UFUNCTION(Exec)
+	void VL_Container(int32 ResourceIndex, int32 X, int32 Y);
+
+	UFUNCTION(Exec)
+	void VL_Unequip(int32 X, int32 Y);
+
+	UFUNCTION(Exec)
+	void VL_ClearBed();
+
+	UFUNCTION(Exec)
+	void VL_BedSize(int32 Width, int32 Height);
 
 protected:
 	virtual void BeginPlay() override;
@@ -167,6 +185,13 @@ protected:
 
 	UFUNCTION()
 	void HandleRigDeath();
+
+	// Test tooling: the pieces and resources the console commands can place.
+	UPROPERTY(EditDefaultsOnly, Category = "VL|Debug")
+	TArray<TObjectPtr<UVL_EquipmentDefinition>> DebugEquipment;
+
+	UPROPERTY(EditDefaultsOnly, Category = "VL|Debug")
+	TArray<TObjectPtr<UVL_ResourceDefinition>> DebugResources;
 
 private:
 
