@@ -39,8 +39,8 @@ protected:
 private:
 	void FindFocus();
 	void SetFocus(AVL_ResourceNode* NewFocus);
-	void HandleMinigameFinished(bool bSuccess, int32 Hits, int32 Total);
-	void FinishCollection(bool bSuccess, int32 Hits, int32 Total);
+	void HandleMinigameFinished(int32 PiecesCollected);
+	void FinishCollection(bool bCompleted, int32 PiecesCollected);
 
 	TWeakObjectPtr<AVL_ResourceNode> Focus;
 	TWeakObjectPtr<AVL_ResourceNode> Active;

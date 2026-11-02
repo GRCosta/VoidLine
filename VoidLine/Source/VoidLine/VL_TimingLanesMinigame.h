@@ -40,9 +40,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Timing Lanes", meta = (ClampMin = "0.05"))
 	float HitWindow = 0.2f;
 
-	// Fraction of pieces that must be caught for the collection to succeed.
-	UPROPERTY(EditAnywhere, Category = "Timing Lanes", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-	float RequiredHitRatio = 0.5f;
+	// Resource pieces collected per caught piece.
+	UPROPERTY(EditAnywhere, Category = "Timing Lanes", meta = (ClampMin = "1"))
+	int32 PiecesPerCatch = 1;
 
 private:
 	TArray<FVL_TimingPiece> Pieces;

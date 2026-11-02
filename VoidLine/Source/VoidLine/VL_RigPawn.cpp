@@ -18,6 +18,7 @@
 #include "VL_ExposureComponent.h"
 #include "VL_HealthComponent.h"
 #include "VL_InteractionComponent.h"
+#include "VL_InventoryComponent.h"
 #include "VL_MinigameComponent.h"
 #include "VL_WeaponComponent.h"
 #include "VL_WorldStateSubsystem.h"
@@ -61,6 +62,7 @@ AVL_RigPawn::AVL_RigPawn()
 	WeaponComponent = CreateDefaultSubobject<UVL_WeaponComponent>(TEXT("WeaponComponent"));
 	InteractionComponent = CreateDefaultSubobject<UVL_InteractionComponent>(TEXT("InteractionComponent"));
 	MinigameComponent = CreateDefaultSubobject<UVL_MinigameComponent>(TEXT("MinigameComponent"));
+	InventoryComponent = CreateDefaultSubobject<UVL_InventoryComponent>(TEXT("InventoryComponent"));
 }
 
 void AVL_RigPawn::BeginPlay()

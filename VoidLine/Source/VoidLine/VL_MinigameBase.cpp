@@ -11,9 +11,7 @@ void UVL_MinigameBase::Start()
 {
 	bStarted = true;
 	bFinished = false;
-	bSuccess = false;
-	Hits = 0;
-	Total = 0;
+	CollectedPieces = 0;
 	StartTime = FPlatformTime::Seconds();
 	OnStart();
 }
@@ -34,10 +32,8 @@ void UVL_MinigameBase::SendInput(EVL_MinigameInput Input)
 	}
 }
 
-void UVL_MinigameBase::Complete(bool bInSuccess, int32 InHits, int32 InTotal)
+void UVL_MinigameBase::Complete(int32 InCollectedPieces)
 {
 	bFinished = true;
-	bSuccess = bInSuccess;
-	Hits = InHits;
-	Total = InTotal;
+	CollectedPieces = InCollectedPieces;
 }

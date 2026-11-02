@@ -1,8 +1,21 @@
 #include "VL_MinigameComponent.h"
 
+#include "GameFramework/Actor.h"
+#include "VL_ExposureComponent.h"
+
 UVL_MinigameComponent::UVL_MinigameComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+}
+
+void UVL_MinigameComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (AActor* Owner = GetOwner())
+	{
+		ExposureSource = Owner->FindComponentByClass<UVL_ExposureComponent>();
+	}
 }
 
 void UVL_MinigameComponent::StartMinigame(const UVL_MinigameBase* Template)
@@ -41,17 +54,21 @@ void UVL_MinigameComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 		return;
 	}
 
+	// Minigames can react to Exposure (no effects yet, but the value is always available).
+	if (ExposureSource)
+	{
+		Current->SetExposure(ExposureSource->GetExposure01());
+	}
+
 	Current->Update();
 
 	if (Current->IsFinished())
 	{
-		const bool bSuccess = Current->WasSuccessful();
-		const int32 Hits = Current->GetHits();
-		const int32 Total = Current->GetTotal();
+		const int32 Pieces = Current->GetCollectedPieces();
 
 		// Unbind first, so the listener can safely start or cancel things in its callback.
 		FVL_OnMinigameFinished Callback = OnFinished;
 		OnFinished.Unbind();
-		Callback.ExecuteIfBound(bSuccess, Hits, Total);
+		Callback.ExecuteIfBound(Pieces);
 	}
 }

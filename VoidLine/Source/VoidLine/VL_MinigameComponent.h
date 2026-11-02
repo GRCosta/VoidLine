@@ -5,8 +5,10 @@
 #include "VL_MinigameBase.h"
 #include "VL_MinigameComponent.generated.h"
 
-// bSuccess, pieces caught, total pieces
-DECLARE_DELEGATE_ThreeParams(FVL_OnMinigameFinished, bool, int32, int32);
+class UVL_ExposureComponent;
+
+// Resource pieces collected.
+DECLARE_DELEGATE_OneParam(FVL_OnMinigameFinished, int32);
 
 // Runs whichever minigame the resource being collected asks for.
 UCLASS(ClassGroup = (VL), meta = (BlueprintSpawnableComponent))
@@ -31,10 +33,14 @@ public:
 	FVL_OnMinigameFinished OnFinished;
 
 protected:
+	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 		FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
 	UPROPERTY(Transient)
 	TObjectPtr<UVL_MinigameBase> Current;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UVL_ExposureComponent> ExposureSource;
 };

@@ -21,6 +21,7 @@ AVL_ChaserEnemy::AVL_ChaserEnemy()
 	// Enemies don't block the rig or each other; the rig drives through them.
 	// Projectiles still hit them because those use a different channel.
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 
 	UCharacterMovementComponent* Move = GetCharacterMovement();
 	Move->bRunPhysicsWithNoController = true; // no AI controller needed

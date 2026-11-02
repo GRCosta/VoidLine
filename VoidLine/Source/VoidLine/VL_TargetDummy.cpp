@@ -11,6 +11,7 @@ AVL_TargetDummy::AVL_TargetDummy()
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	Mesh->SetCollisionProfileName(TEXT("BlockAllDynamic"));
+	Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	Mesh->SetRelativeScale3D(FVector(1.f, 1.f, 2.f));
 	RootComponent = Mesh;
 

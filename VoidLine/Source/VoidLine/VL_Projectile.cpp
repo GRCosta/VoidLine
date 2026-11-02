@@ -17,6 +17,7 @@ AVL_Projectile::AVL_Projectile()
 	// Projectiles are PhysicsBody objects that ignore each other, but still hit everything else.
 	Collision->SetCollisionObjectType(ECC_PhysicsBody);
 	Collision->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Ignore);
+	Collision->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	Collision->SetNotifyRigidBodyCollision(true); // lets OnComponentHit fire
 	Collision->OnComponentHit.AddDynamic(this, &AVL_Projectile::OnHit);
 	RootComponent = Collision;

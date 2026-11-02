@@ -17,6 +17,7 @@ struct FInputActionValue;
 class UVL_WeaponComponent;
 class UVL_EnemySpawnerComponent;
 class UVL_InteractionComponent;
+class UVL_InventoryComponent;
 class UVL_MinigameComponent;
 
 UCLASS()
@@ -70,6 +71,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VL|Components")
 	TObjectPtr<UVL_MinigameComponent> MinigameComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VL|Components")
+	TObjectPtr<UVL_InventoryComponent> InventoryComponent;
 
 	// ---- Input assets (assign these in the Blueprint subclass) ----
 	UPROPERTY(EditDefaultsOnly, Category = "VL|Input")

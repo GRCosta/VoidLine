@@ -1,6 +1,5 @@
 #include "VL_TimingLanesMinigame.h"
 
-#include "Engine/Canvas.h"
 #include "Engine/Engine.h"
 #include "GameFramework/HUD.h"
 
@@ -75,9 +74,7 @@ void UVL_TimingLanesMinigame::OnUpdate(float Elapsed)
 
 	if (PendingCount == 0 || Elapsed >= Duration)
 	{
-		const int32 PieceTotal = Pieces.Num();
-		const int32 Needed = FMath::CeilToInt(PieceTotal * RequiredHitRatio);
-		Complete(HitCount >= Needed, HitCount, PieceTotal);
+		Complete(HitCount * PiecesPerCatch);
 	}
 }
 
@@ -87,6 +84,7 @@ void UVL_TimingLanesMinigame::Draw(AHUD* HUD, float CanvasWidth, float CanvasHei
 	{
 		return;
 	}
+
 	const float Elapsed = GetElapsed();
 
 	// Layout
@@ -108,7 +106,7 @@ void UVL_TimingLanesMinigame::Draw(AHUD* HUD, float CanvasWidth, float CanvasHei
 	const float TimeLeft = FMath::Max(Duration - Elapsed, 0.f);
 
 	HUD->DrawText(TEXT("COLLECTING"), FLinearColor::White, PanelX + 20.f, PanelY + 15.f, Font, 1.2f);
-	HUD->DrawText(FString::Printf(TEXT("Time %.1f   Caught %d/%d"), TimeLeft, HitCount, Pieces.Num()),
+	HUD->DrawText(FString::Printf(TEXT("Time %.1f   Collected %d"), TimeLeft, HitCount * PiecesPerCatch),
 		FLinearColor(1.f, 0.85f, 0.4f), PanelX + 20.f, PanelY + 45.f, Font, 1.f);
 
 	const float BandH = 2.f * (HitWindow / FallTime) * FallDistance;

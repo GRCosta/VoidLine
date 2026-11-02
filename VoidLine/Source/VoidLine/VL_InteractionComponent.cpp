@@ -5,6 +5,7 @@
 #include "EngineUtils.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
+#include "VL_InventoryComponent.h"
 #include "VL_MinigameComponent.h"
 #include "VL_ResourceDefinition.h"
 #include "VL_ResourceNode.h"
@@ -39,7 +40,7 @@ void UVL_InteractionComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 		// The node vanished mid-minigame: give up.
 		if (!Active.IsValid())
 		{
-			FinishCollection(false, 0, 0);
+			FinishCollection(false, 0);
 		}
 		return;
 	}
@@ -129,16 +130,16 @@ void UVL_InteractionComponent::CancelCollection()
 {
 	if (bCollecting)
 	{
-		FinishCollection(false, 0, 0);
+		FinishCollection(false, 0);
 	}
 }
 
-void UVL_InteractionComponent::HandleMinigameFinished(bool bSuccess, int32 Hits, int32 Total)
+void UVL_InteractionComponent::HandleMinigameFinished(int32 PiecesCollected)
 {
-	FinishCollection(bSuccess, Hits, Total);
+	FinishCollection(true, PiecesCollected);
 }
 
-void UVL_InteractionComponent::FinishCollection(bool bSuccess, int32 Hits, int32 Total)
+void UVL_InteractionComponent::FinishCollection(bool bCompleted, int32 PiecesCollected)
 {
 	if (UVL_MinigameComponent* Minigame = GetOwner()->FindComponentByClass<UVL_MinigameComponent>())
 	{
@@ -154,20 +155,26 @@ void UVL_InteractionComponent::FinishCollection(bool bSuccess, int32 Hits, int32
 	if (GEngine && Node)
 	{
 		const FString NodeName = Node->GetDisplayName();
-		if (bSuccess)
+		if (bCompleted)
 		{
 			GEngine->AddOnScreenDebugMessage(107, 3.f, FColor::Green,
-				FString::Printf(TEXT("Collected %s (%d/%d caught)"), *NodeName, Hits, Total));
+				FString::Printf(TEXT("Collected %d %s"), PiecesCollected, *NodeName));
 		}
 		else
 		{
 			GEngine->AddOnScreenDebugMessage(107, 3.f, FColor::Orange,
-				FString::Printf(TEXT("Failed to collect %s (%d/%d caught)"), *NodeName, Hits, Total));
+				FString::Printf(TEXT("Collection of %s interrupted"), *NodeName));
 		}
 	}
 
-	if (bSuccess && Node)
+	// A finished session always consumes the node, whatever the amount collected.
+	if (bCompleted && Node)
 	{
+		if (UVL_InventoryComponent* Inventory = GetOwner()->FindComponentByClass<UVL_InventoryComponent>())
+		{
+			Inventory->AddResource(Node->GetDefinition(), PiecesCollected);
+		}
+
 		Focus.Reset();
 		Node->Destroy();
 	}

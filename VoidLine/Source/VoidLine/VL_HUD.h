@@ -4,7 +4,9 @@
 #include "GameFramework/HUD.h"
 #include "VL_HUD.generated.h"
 
-// Draws the collection minigame. Placeholder look, to be replaced by real UI later.
+class UVL_InventoryComponent;
+
+// Draws the cargo readout and the collection minigame. Placeholder look, to be replaced by real UI later.
 UCLASS()
 class VOIDLINE_API AVL_HUD : public AHUD
 {
@@ -12,4 +14,7 @@ class VOIDLINE_API AVL_HUD : public AHUD
 
 public:
 	virtual void DrawHUD() override;
+
+private:
+	void DrawInventory(const UVL_InventoryComponent* Inventory);
 };
